@@ -42,6 +42,6 @@ private:
 	void OnRep_OverlappingWeapon();
 
 public:	
-	FORCEINLINE void SetOverlappingWeapon(AWeapon* Weapon) { OverlappingWeapon = Weapon; }
+	void SetOverlappingWeapon(AWeapon* Weapon);
 
 };
