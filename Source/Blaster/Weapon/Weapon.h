@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "Animation/AnimationAsset.h"
 #include "Weapon.generated.h"
 
@@ -24,8 +25,12 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const override;
+	virtual void OnRep_Owner() override;
+	void SetHUDAmmo();
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	void Dropped();
+	void AddAmmo(int32 AmmoToAdd);
 
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 		class UTexture2D* CrosshairsCenter;
@@ -47,6 +52,15 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float FireDelay = .15f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	bool bAutomatic = true;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* EquipSound;
 
 protected:
 	virtual void BeginPlay() override;
@@ -91,6 +105,25 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing>CasingClass;
 
+	UPROPERTY(EditAnywhere,ReplicatedUsing= OnRep_Ammo)
+	int32 Ammo;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
+
+	UPROPERTY()
+	class ABlasterCharacter* BlasterOwnerCharacter;
+	UPROPERTY()
+	class ABlasterPlayerController* BlasterOwnerController;
+
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
+
 public:	
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetAreaSphere() const {
@@ -104,5 +137,15 @@ public:
 	}
 	FORCEINLINE float GetZoomInterpSpeed()const {
 		return ZoomInterpSpeed;
+	}
+	bool IsEmpty();
+	FORCEINLINE EWeaponType GetWeaponType() const {
+		return WeaponType;
+	}
+	FORCEINLINE int32 GetAmmo() const {
+		return Ammo;
+	}
+	FORCEINLINE int32 GetMagCapacity() const {
+		return MagCapacity;
 	}
 };

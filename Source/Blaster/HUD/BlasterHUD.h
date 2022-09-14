@@ -17,6 +17,7 @@ public:
 	UTexture2D* CrosshairsTop;
 	UTexture2D* CrosshairsBottom;
 	float CrosshairSpread;
+	FLinearColor CrosshairsColor;
 };
 
 /**
@@ -30,10 +31,29 @@ class BLASTER_API ABlasterHUD : public AHUD
 public:
 	virtual void DrawHUD() override;
 
+	UPROPERTY(EditAnywhere,Category = "Player Stats")
+	TSubclassOf<class UUserWidget>CharacterOverlayClass;
+
+	UPROPERTY()
+	class UCharacterOverlay* CharacterOverlay;
+
+	void AddCharacterOverlay();
+
+	UPROPERTY(EditAnywhere, Category = "Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+
+	UPROPERTY()
+	class UAnnouncement* Announcement;
+
+	void AddAnnouncement();
+
+protected:
+	virtual void BeginPlay() override;
+
 private:
 	FHUDPackage HUDPackage;
 
-	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter,FVector2D Spread);
+	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter,FVector2D Spread, FLinearColor CrosshairColor = FLinearColor::White);
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 16.f;

@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Blaster/Weapon/Weapon.h"
+#include "Blaster/BlasterTypes/CombatState.h"
 
 void UBlasterAnimInstance::NativeInitializeAnimation()
 {
@@ -35,6 +36,8 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsCrouched = BlasterCharacter->bIsCrouched;
 	bAiming = BlasterCharacter->IsAiming();
 	TurningInPlace = BlasterCharacter->GetTurningInPlace();
+	bRotateRootBone = BlasterCharacter->ShouldRotateRootBone();
+	bElimmed = BlasterCharacter->IsElimmed();
 
 	//Offset Yaw for Strafing
 	FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
@@ -66,16 +69,12 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		{ 
 			bLocallyControlled = true;
 			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("hand_r"), ERelativeTransformSpace::RTS_World);
-			
-			FVector HitTarget = BlasterCharacter->GetHitTarget();
-			if (HitTarget != FVector(0.f)) 
-			{
-				RightHandRotation = UKismetMathLibrary::FindLookAtRotation(
-					RightHandTransform.GetLocation(),
-					2 * RightHandTransform.GetLocation() - HitTarget
-				);
-			}
-			
+			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(
+				RightHandTransform.GetLocation(),
+				2 * RightHandTransform.GetLocation() - BlasterCharacter->GetHitTarget()
+			);
+			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 15.f);
+
 			/*
 			UE_LOG(LogTemp, Warning, TEXT("%d %d %d"), BlasterCharacter->GetHitTarget().X,
 				BlasterCharacter->GetHitTarget().Y,
@@ -85,4 +84,8 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 			
 		}
 	}
+
+	bUseFABRIK = BlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffsets = BlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bTransformRightHand = BlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
 }
