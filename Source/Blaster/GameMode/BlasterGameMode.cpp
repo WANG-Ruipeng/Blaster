@@ -24,6 +24,65 @@ void ABlasterGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	LevelStartingTime = GetWorld()->GetTimeSeconds();
+
+}
+
+void ABlasterGameMode::PrintAllPlayerState() 
+{
+	for (auto& It : PlayerStates)
+	{
+		if (It != nullptr)
+		{
+			FString PName = It->GetPlayerName();
+			if (It->bIsMutant == true)
+			{
+				PName += FString("Mutant");
+			}
+			else 
+			{
+				PName += FString("Normal");
+			}
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, PName);
+		}
+	}
+}
+
+void ABlasterGameMode::SetInitialMutant() 
+{
+	bInitialMutantSet = true;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABlasterPlayerController* thisPlayerController = Cast<ABlasterPlayerController>(*It);
+		ABlasterPlayerState* thisPlayerState = thisPlayerController->GetPlayerState<ABlasterPlayerState>();
+		PlayerStates.Add(thisPlayerState);
+	}
+
+	int32 PlayerNum = PlayerStates.Num();
+	int32 initialMutantIndex = FMath::RandHelper(PlayerNum);
+	if (PlayerStates[initialMutantIndex]) 
+	{
+		PlayerStates[initialMutantIndex]->bIsMutant = true;
+		ABlasterPlayerController* PlayerController = PlayerStates[initialMutantIndex]->Controller;
+		if (PlayerController) 
+		{
+			PlayerController->SetHUDMutant(true);
+		}
+	}
+
+}
+
+void ABlasterGameMode::AddPointForMutants() 
+{
+	for (auto& It: PlayerStates)
+	{
+		if (It != nullptr) 
+		{
+			if (It->bIsMutant == true)
+			{
+				It->AddToScore(1.f);
+			}
+		}
+	}
 }
 
 void ABlasterGameMode::Tick(float DeltaTime)
@@ -45,6 +104,15 @@ void ABlasterGameMode::Tick(float DeltaTime)
 		{
 			SetMatchState(MatchState::Cooldown);
 		}
+		if(HasAuthority() && !bInitialMutantSet)
+			SetInitialMutant();
+		//PrintAllPlayerState();
+		if (HasAuthority() && FMath::Abs(lastAddCountdownTime - CountdownTime) >= 1) {
+			AddPointForMutants();
+			lastAddCountdownTime = CountdownTime;
+		}
+			
+		
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
@@ -88,13 +156,18 @@ void ABlasterGameMode::PlayerEliminated(class ABlasterCharacter* ElimmedCharacte
 
 	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState && BlasterGameState)
 	{
-		AttackerPlayerState->AddToScore(1.f);
+		//AttackerPlayerState->AddToScore(1.f);
 		BlasterGameState->UpdateTopScore(AttackerPlayerState);
+		AttackerPlayerState->bIsMutant = false;
+		AttacterController->SetHUDMutant(false);
 	}
 
 	if (VictimPlayerState) 
 	{
-		VictimPlayerState->AddToDefeats(1);
+		if(!VictimPlayerState->bIsMutant)
+			VictimPlayerState->AddToDefeats(1);
+		VictimPlayerState->bIsMutant = true;
+		AttacterController->SetHUDMutant(true);
 	}
 
 	if (ElimmedCharacter)

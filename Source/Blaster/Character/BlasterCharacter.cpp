@@ -116,8 +116,8 @@ void ABlasterCharacter::MulticastElim_Implementation()
 		Combat->FireButtonPressed(false);
 	}
 
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	if (ElimBotEffect) 
 	{
@@ -278,6 +278,7 @@ void ABlasterCharacter::PlayReloadMontage()
 void ABlasterCharacter::PlayElimMontage()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
 	if (AnimInstance && ElimMontage)
 	{
 		AnimInstance->Montage_Play(ElimMontage);
@@ -299,11 +300,26 @@ void ABlasterCharacter::PlayHitReactMontage()
 
 void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	if (bElimmed) return;
+
+	ABlasterPlayerState* AttackerPlayerState = InstigatorController->GetPlayerState<ABlasterPlayerState>();
+	if (AttackerPlayerState) 
+	{
+		bool AttackerStatus = AttackerPlayerState->bIsMutant;
+		if (AttackerStatus) 
+		{
+			Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+		}
+		else
+		{
+			Health = FMath::Clamp(Health - Damage, 10.f, MaxHealth);
+		}
+	}
+
 	UpdateHUDHealth();
 	PlayHitReactMontage();
 
-	if (Health == 0.f) 
+	if (Health <= 0.f && bElimmed == false)
 	{
 		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
 		if (BlasterGameMode)
@@ -431,6 +447,7 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 		{
 			InterpAO_Yaw = AO_Yaw;
 		}
+		bUseControllerRotationYaw = true;
 		TurnInPlace(DeltaTime);
 	}
 
@@ -462,7 +479,7 @@ void ABlasterCharacter::CalculateAO_Pitch()
 void ABlasterCharacter::SimProxiesTurn()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
-
+	bRotateRootBone = false;
 	float Speed = CalculateSpeed();
 	if (Speed > 0.f) 
 	{
@@ -470,7 +487,6 @@ void ABlasterCharacter::SimProxiesTurn()
 		return;
 	}
 
-	bRotateRootBone = false;
 	ProxyRotationLastFrame = ProxyRotation;
 	ProxyRotation = GetActorRotation();
 	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
@@ -624,11 +640,6 @@ void ABlasterCharacter::StartDissolve()
 		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
 		DissolveTimeline->Play();
 	}
-}
-
-void ABlasterCharacter::OnRep_bDisableGameplay()
-{
-	GetMesh()->SetEnableGravity(!bDisableGameplay);
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)

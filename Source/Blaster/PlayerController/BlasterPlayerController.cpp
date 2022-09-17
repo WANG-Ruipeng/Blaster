@@ -269,6 +269,29 @@ void ABlasterPlayerController::SetHUDTime()
 	CountdownInt = SecondsLeft;
 }
 
+void ABlasterPlayerController::SetHUDMutant(bool bIsMutant) 
+{
+	//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("HUDSet"));
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->IsMutant;
+	if (bHUDValid)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("bHUDValid"));
+		if (bIsMutant) 
+		{
+			FString MutantText = FString::Printf(TEXT("Mutant"));
+			BlasterHUD->CharacterOverlay->IsMutant->SetText(FText::FromString(MutantText));
+		}
+		else 
+		{
+			FString MutantText = FString::Printf(TEXT("Normal"));
+			BlasterHUD->CharacterOverlay->IsMutant->SetText(FText::FromString(MutantText));
+		}
+	}
+}
+
 void ABlasterPlayerController::PollInit()
 {
 	if (CharacterOverlay == nullptr)
@@ -410,4 +433,16 @@ void ABlasterPlayerController::HandleCooldown()
 		BlasterCharacter->bDisableGameplay = true;
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
 	}
+}
+
+void ABlasterPlayerController::SetPlayerMutant(bool bPlayerIsMutant) 
+{
+	ABlasterPlayerState* BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+	BlasterPlayerState->bIsMutant = bPlayerIsMutant;
+}
+
+bool ABlasterPlayerController::GetPlayerMutant() 
+{
+	ABlasterPlayerState* BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+	return BlasterPlayerState->bIsMutant;
 }

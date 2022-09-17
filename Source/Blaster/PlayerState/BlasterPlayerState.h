@@ -20,11 +20,16 @@ public:
 	virtual void OnRep_Defeats();
 	void AddToScore(float ScoreAmount);
 	void AddToDefeats(int32 DefeatsAmount);
+	
+	UPROPERTY(Replicated)
+	bool bIsMutant = false;
+
+	UPROPERTY()
+	class ABlasterPlayerController* Controller;
+
 private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
-	UPROPERTY()
-	class ABlasterPlayerController* Controller;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
 	int32 Defeats;

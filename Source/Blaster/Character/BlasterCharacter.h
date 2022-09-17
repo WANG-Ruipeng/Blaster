@@ -166,10 +166,8 @@ private:
 
 public:
 
-	UPROPERTY(ReplicatedUsing = OnRep_bDisableGameplay)
+	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
-	UFUNCTION()
-	void OnRep_bDisableGameplay();
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();

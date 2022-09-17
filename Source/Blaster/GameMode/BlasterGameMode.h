@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "Blaster/PlayerState/BlasterPlayerState.h"
 #include "BlasterGameMode.generated.h"
 
 namespace MatchState
@@ -45,6 +46,15 @@ public:
 
 private:
 	float CountdownTime = 0.f;
+
+	void SetInitialMutant();
+	bool bInitialMutantSet = false;
+	void AddPointForMutants();
+	int32 lastAddCountdownTime = CountdownTime;
+	void PrintAllPlayerState();
+
+	UPROPERTY()
+	TArray<ABlasterPlayerState*> PlayerStates;
 
 protected:
 	virtual void BeginPlay() override;
